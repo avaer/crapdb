@@ -1,0 +1,22 @@
+{
+  "name": "crapdb",
+  "version": "0.0.1",
+  "description": "A 'database' that's just a single JSON file, and that you can't query",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/modulesio/crapdb.git"
+  },
+  "author": "Avaer Kazmer <a@modules.io>",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/modulesio/crapdb/issues"
+  },
+  "homepage": "https://github.com/modulesio/crapdb#readme",
+  "dependencies": {
+    "mkdirp": "^0.5.1"
+  }
+}
