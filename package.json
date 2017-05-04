@@ -1,6 +1,6 @@
 {
   "name": "crapdb",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "A 'database' that's just a single JSON file, and that you can't query",
   "main": "index.js",
   "scripts": {
