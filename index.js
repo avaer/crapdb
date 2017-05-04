@@ -9,7 +9,7 @@ class Crapdb {
 
     this._data = undefined;
 
-    this.set = _debounce(this.set.bind(this));
+    this.save = _debounce(this.save.bind(this));
   }
 
   get() {
@@ -21,7 +21,9 @@ class Crapdb {
   }
 
   load(cb) {
-    fs.readFile(this.path, 'utf8', (err, s) => {
+    const {path: p} = this;
+
+    fs.readFile(p, 'utf8', (err, s) => {
       if (!err) {
         const data = _jsonParse(s);
 
@@ -30,7 +32,7 @@ class Crapdb {
 
           cb();
         } else {
-          const err = new Error('failed to parse existing database json');
+          const err = new Error('failed to parse existing database json: ' + JSON.stringify(p));
 
           cb(err);
         }
@@ -43,15 +45,27 @@ class Crapdb {
   }
 
   save(next) {
-    mkdirp(path.basename(this.path), err => {
-      if (!err) {
-        fs.writeFile(this.path, JSON.stringify(this._data, null, 2), err => {
-          if (err) {
-            console.warn(err);
-          }
+    const {path: p, _data: data} = this;
 
-          next();
-        });
+    mkdirp(path.dirname(p), err => {
+      if (!err) {
+        if (data !== undefined) {
+          fs.writeFile(p, JSON.stringify(data, null, 2), err => {
+            if (err) {
+              console.warn(err);
+            }
+
+            next();
+          });
+        } else {
+          fs.unlink(p, err => {
+            if (err) {
+              console.warn(err);
+            }
+
+            next();
+          });
+        }
       } else {
         console.warn(err);
 
