@@ -16,7 +16,11 @@ class Crapdb {
     return this._data;
   }
 
-  set(next) {
+  set(data) {
+    this._data = data;
+  }
+
+  save(next) {
     mkdirp(path.basename(this.path), err => {
       if (!err) {
         fs.writeFile(this.path, JSON.stringify(this._data, null, 2), err => {
