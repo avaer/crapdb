@@ -10,12 +10,14 @@ class Crapdb {
   }
 
   get(k) {
-    return this.map[murmur(k)];
+    const n = murmur(k);
+    return this.map[n];
   }
 
   set(k, v) {
     if (v instanceof Uint8Array && v.length < (CHUNK_SIZE - CHUNK_HEADER_SIZE)) {
-      this.map[murmur(k)] = v;
+      const n = murmur(k);
+      this.map[n] = v;
       return true;
     } else {
       return false;
@@ -24,13 +26,13 @@ class Crapdb {
 
   load(buffer) {
     const map = {};
-    for (let byteOffset = 0; byteOffset < buffer.length;) {
-      const headerBuffer = new Uint32Array(buffer, byteOffset, CHUNK_HEADERS_SLOTS);
+    for (let byteOffset = 0; byteOffset < buffer.byteLength;) {
+      const headerBuffer = new Uint32Array(buffer.buffer, byteOffset, CHUNK_HEADERS_SLOTS);
       const n = headerBuffer[0];
       const size = headerBuffer[1];
       byteOffset += CHUNK_HEADER_SIZE;
 
-      const v = new Uint8Array(buffer, byteOffset, size);
+      const v = new Uint8Array(buffer.buffer, byteOffset, size);
       byteOffset += CHUNK_SIZE - CHUNK_HEADER_SIZE;
 
       map[n] = v;
@@ -44,10 +46,10 @@ class Crapdb {
     for (const n in this.map) {
       const v = this.map[n];
       const headerBuffer = Uint32Array.from([n, v.length]);
-      fn(new Uint8Array(headerBuffer.buffer, headerBuffer.byteOffset, headerBuffer.byteLength));
+      fn(byteOffset, new Uint8Array(headerBuffer.buffer, headerBuffer.byteOffset, headerBuffer.byteLength));
       byteOffset += headerBuffer.byteLength;
 
-      fn(v);
+      fn(byteOffset, v);
       byteOffset += (CHUNK_SIZE - headerBuffer.byteLength);
     }
   }
