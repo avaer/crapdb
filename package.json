@@ -1,7 +1,7 @@
 {
   "name": "crapdb",
-  "version": "0.0.4",
-  "description": "A 'database' that's just a single JSON file, and that you can't query",
+  "version": "0.0.5",
+  "description": "Dumb single-file database format",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
@@ -17,6 +17,6 @@
   },
   "homepage": "https://github.com/modulesio/crapdb#readme",
   "dependencies": {
-    "mkdirp": "^0.5.1"
+    "murmurhash": "0.0.2"
   }
 }

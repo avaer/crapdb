@@ -1,116 +1,57 @@
-const path = require('path');
-const fs = require('fs');
+const murmur = require('murmurhash');
 
-const mkdirp = require('mkdirp');
+const CHUNK_SIZE = 4 * 1024;
+const CHUNK_HEADERS_SLOTS = 2;
+const CHUNK_HEADER_SIZE = CHUNK_HEADERS_SLOTS * 4;
 
 class Crapdb {
-  constructor({path = 'data.json'} = {}) {
-    this.path = path;
-
-    this._data = undefined;
-
-    this.save = _debounce(this.save.bind(this));
+  constructor() {
+    this.map = {};
   }
 
-  get() {
-    return this._data;
+  get(k) {
+    return this.map[murmur(k)];
   }
 
-  set(data) {
-    this._data = data;
+  set(k, v) {
+    if (v instanceof Uint8Array && v.length < (CHUNK_SIZE - CHUNK_HEADER_SIZE)) {
+      this.map[murmur(k)] = v;
+      return true;
+    } else {
+      return false;
+    }
   }
 
-  load(cb) {
-    const {path: p} = this;
+  load(buffer) {
+    const map = {};
+    for (let byteOffset = 0; byteOffset < buffer.length;) {
+      const headerBuffer = new Uint32Array(buffer, byteOffset, CHUNK_HEADERS_SLOTS);
+      const n = headerBuffer[0];
+      const size = headerBuffer[1];
+      byteOffset += CHUNK_HEADER_SIZE;
 
-    fs.readFile(p, 'utf8', (err, s) => {
-      if (!err) {
-        const data = _jsonParse(s);
+      const v = new Uint8Array(buffer, byteOffset, size);
+      byteOffset += CHUNK_SIZE - CHUNK_HEADER_SIZE;
 
-        if (data !== undefined) {
-          this._data = data;
-
-          cb();
-        } else {
-          const err = new Error('failed to parse existing database json: ' + JSON.stringify(p));
-
-          cb(err);
-        }
-      } else if (err.code === 'ENOENT') {
-        cb();
-      } else {
-        cb(err);
-      }
-    });
+      map[n] = v;
+    }
+    this.map = map;
   }
 
-  save(next) {
-    const {path: p, _data: data} = this;
+  save(fn) {
+    let byteOffset = 0;
 
-    mkdirp(path.dirname(p), err => {
-      if (!err) {
-        if (data !== undefined) {
-          fs.writeFile(p, JSON.stringify(data, null, 2), err => {
-            if (err) {
-              console.warn(err);
-            }
+    for (const n in this.map) {
+      const v = this.map[n];
+      const headerBuffer = Uint32Array.from([n, v.length]);
+      fn(new Uint8Array(headerBuffer.buffer, headerBuffer.byteOffset, headerBuffer.byteLength));
+      byteOffset += headerBuffer.byteLength;
 
-            next();
-          });
-        } else {
-          fs.unlink(p, err => {
-            if (err) {
-              console.warn(err);
-            }
-
-            next();
-          });
-        }
-      } else {
-        console.warn(err);
-
-        next();
-      }
-    });
+      fn(v);
+      byteOffset += (CHUNK_SIZE - headerBuffer.byteLength);
+    }
   }
 }
 
-const _jsonParse = s => {
-  let error = null;
-  let result;
-  try {
-    result = JSON.parse(s);
-  } catch (err) {
-    error = err;
-  }
-  if (!error) {
-    return result;
-  } else {
-    return undefined;
-  }
-};
-const _debounce = fn => {
-  let running = false;
-  let queued = false;
-
-  const _go = () => {
-    if (!running) {
-      running = true;
-
-      fn(() => {
-        running = false;
-
-        if (queued) {
-          queued = false;
-
-          _go();
-        }
-      });
-    } else {
-      queued = true;
-    }
-  };
-  return _go;
-};
-
-module.exports = Crapdb;
+const crapdb = () => new Crapdb();
+module.exports = crapdb;
