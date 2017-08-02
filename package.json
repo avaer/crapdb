@@ -1,6 +1,6 @@
 {
   "name": "crapdb",
-  "version": "0.0.6",
+  "version": "0.0.7",
   "description": "Dumb single-file database format",
   "main": "index.js",
   "scripts": {
